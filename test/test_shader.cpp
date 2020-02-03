@@ -11,11 +11,15 @@
 
 // unit(s) under test
 #include "Shader.hpp"
+#include "Display.hpp"
 
 const std::string test_shader_file = "shader/test";
 
+// Actually.. I may need to create a display here first..
+
 TEST_CASE("test_init_shader", "[classic]")
 {
+    Display test_display(800, 600, "shader test");
     Shader test_shader(test_shader_file);
 
 }

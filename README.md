@@ -2,6 +2,7 @@ I am going to write a raymarcher
 
 # Requirements
 - `GLEW`
+- `SDL2`
 
 
 # Tests

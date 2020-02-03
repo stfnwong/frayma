@@ -15,7 +15,7 @@ CXX=g++
 OPT=-O0
 CXXFLAGS=-Wall -g2 -std=c++14 $(OPT)
 TESTFLAGS=
-LDFLAGS= -lGL -lGLEW
+LDFLAGS= -lGL -lGLEW -lSDL2
 LIBS = 
 TEST_LIBS=
 
@@ -50,7 +50,7 @@ $(TEST_OBJECTS): $(OBJ_DIR)/%.o : $(TEST_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCS) -c $< -o $@ 
 
 # ==== TEST TARGETS ==== #
-TESTS=test_shader
+TESTS=test_display test_shader 
 $(TESTS): $(TEST_OBJECTS) $(OBJECTS)
 	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o\
 		-o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
