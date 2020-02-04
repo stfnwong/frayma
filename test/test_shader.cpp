@@ -13,13 +13,14 @@
 #include "Shader.hpp"
 #include "Display.hpp"
 
-const std::string test_shader_file = "shader/test";
+const std::string test_vert_shader = "shader/test.vert";
+const std::string test_frag_shader = "shader/test.frag";
 
 // Actually.. I may need to create a display here first..
 
 TEST_CASE("test_init_shader", "[classic]")
 {
     Display test_display(800, 600, "shader test");
-    Shader test_shader(test_shader_file);
+    Shader test_shader(test_vert_shader, test_frag_shader);
 
 }
