@@ -1,6 +1,6 @@
 // Basic vertex shader for unit tests 
 
-#version 330 core
+#version 110 
 
 attribute vec3 position;
 attribute vec2 tex_coord;

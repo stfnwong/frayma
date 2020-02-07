@@ -9,6 +9,8 @@
 #include <fstream>
 #include "Shader.hpp"
 
+// TODO: re-do the shader compilation stages. I might follow the 
+// design from the Joey DeVries book here.
 
 // Util functions
 /*
@@ -102,10 +104,46 @@ std::string load_shader(const std::string& filename)
 // ======== SHADER OBJECT ======= //
 Shader::Shader(const std::string& vert_shader_filename, const std::string& frag_shader_filename)
 {
-    this->gl_program = glCreateProgram();
+    GLint success;
+    GLchar info_log[512];
 
-    this->gl_shader[0] = create_shader(load_shader(vert_shader_filename), GL_VERTEX_SHADER);
-    this->gl_shader[1] = create_shader(load_shader(frag_shader_filename), GL_FRAGMENT_SHADER);
+
+    //this->gl_shader[0] = create_shader(load_shader(vert_shader_filename), GL_VERTEX_SHADER);
+    //this->gl_shader[1] = create_shader(load_shader(frag_shader_filename), GL_FRAGMENT_SHADER);
+
+    std::string vshader_source = load_shader(vert_shader_filename);
+    std::string fshader_source = load_shader(frag_shader_filename);
+
+    // For now, lets just put all the shader code here and worry about cleaning up later
+    const GLchar* vs_code = vshader_source.c_str(); 
+    const GLchar* fs_code = fshader_source.c_str(); 
+
+    // vertex shader 
+    this->gl_shader[0] = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(this->gl_shader[0], 1, &vs_code, NULL);
+    glCompileShader(this->gl_shader[0]);
+    glGetShaderiv(this->gl_shader[0], GL_COMPILE_STATUS, &success);
+    if(!success)
+    {
+        glGetShaderInfoLog(this->gl_shader[0], 512, NULL, info_log);
+        std::cout << "[" << __func__ << "] shader compilation log '" 
+            << info_log << "' " << std::endl;
+    }
+
+    // fragment shader
+    this->gl_shader[1] = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(this->gl_shader[1], 1, &fs_code, NULL);
+    glCompileShader(this->gl_shader[1]);
+    glGetShaderiv(this->gl_shader[1], GL_COMPILE_STATUS, &success);
+    if(!success)
+    {
+        glGetShaderInfoLog(this->gl_shader[1], 512, NULL, info_log);
+        std::cout << "[" << __func__ << "] shader compilation log '" 
+            << info_log << "' " << std::endl;
+    }
+
+    // Create the program
+    this->gl_program = glCreateProgram();
 
     for(int i = 0; i < MAX_NUM_SHADERS; ++i)
         glAttachShader(this->gl_program, this->gl_shader[i]);
@@ -135,9 +173,9 @@ Shader::~Shader()
 }
 
 /*
- * bind()
+ * use()
  */
-void Shader::bind(void)
+void Shader::use(void)
 {
     glUseProgram(this->gl_program);
 }

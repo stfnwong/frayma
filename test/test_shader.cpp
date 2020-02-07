@@ -23,4 +23,5 @@ TEST_CASE("test_init_shader", "[classic]")
     Display test_display(800, 600, "shader test");
     Shader test_shader(test_vert_shader, test_frag_shader);
 
+    // TODO : what to test?
 }
