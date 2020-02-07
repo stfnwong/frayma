@@ -39,41 +39,6 @@ void check_shader_error(GLuint shader, GLuint flag, bool is_program, const std::
 }
 
 /*
- * create_shader()
- */
-GLuint create_shader(const std::string& shader_text, GLenum shader_type)
-{
-    GLuint shader;
-
-    shader = glCreateShader(shader_type);
-    if(shader == 0)
-    {
-        std::cerr << "[" << __func__ << "] ERROR: shader creation failed" << std::endl;
-        return -1;
-    }
-
-    const GLchar* shader_source[1];
-    GLint shader_source_len[1];
-
-    shader_source[0] = shader_text.c_str();
-    shader_source_len[0] = shader_text.length();
-
-    // DEBUG: remove 
-    std::cout << "[" << __func__ << "] shader_source[0] : " << std::endl;
-    std::cout << shader_source[0] << std::endl;
-
-    glShaderSource(shader, 1, shader_source, shader_source_len);
-    check_shader_error(
-            shader, 
-            GL_COMPILE_STATUS, 
-            false, 
-            "ERROR: Shader compilation failed"
-    ); 
-
-    return shader;
-}
-
-/*
  * load_shader()
  */
 std::string load_shader(const std::string& filename)

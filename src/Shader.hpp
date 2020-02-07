@@ -13,14 +13,6 @@
 
 #define MAX_NUM_SHADERS 2
 
-// TODO : move all these methods into the class...
-//void check_shader_error(GLuint shader, GLuint flag, bool is_program, const std::string& err_msg);
-//
-//GLuint create_shader(const std::string& shader_text, GLenum shader_type);
-//
-//std::string load_shader(const std::string& filename);
-
-
 /*
  * Shader class
  * Encapsulates a Shader

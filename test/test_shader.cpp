@@ -24,4 +24,10 @@ TEST_CASE("test_init_shader", "[classic]")
     Shader test_shader(test_vert_shader, test_frag_shader);
 
     // TODO : what to test?
+    while(!test_display.isClosed())
+    {
+        test_display.clear(0.3f, 0.1f, 0.0f, 1.0f);
+        test_shader.use();
+        test_display.update();
+    }
 }
