@@ -8,7 +8,7 @@ OBJ_DIR=obj
 SRC_DIR=src
 TEST_DIR=test
 TEST_BIN_DIR=$(BIN_DIR)/test
-TOOL_DIR=tools
+PROGRAM_DIR=program
 
 # Tool options
 CXX=g++
@@ -19,16 +19,13 @@ LDFLAGS= -lGL -lGLEW -lSDL2
 LIBS = 
 TEST_LIBS=
 
-# style for assembly output
-ASM_STYLE=intel
-
 # Object targets
 INCS=-I$(SRC_DIR)
 SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
 # Unit tests 
 TEST_SOURCES  = $(wildcard $(TEST_DIR)/*.cpp)
 # Tools (program entry points)
-TOOL_SOURCES = $(wildcard $(TOOL_DIR)/*.cpp)
+PROGRAM_SOURCES = $(wildcard $(PROGRAM_DIR)/*.cpp)
 
 
 # Objects 
@@ -38,11 +35,6 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEPS)
 OBJECTS := $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 $(OBJECTS): $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-# Objects, but output as assembly
-$(ASSEM_OBJECTS): $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
-	$(CC) $(CFLAGS) -S $< -o $(OBJ_DIR)/$@.asm -masm=$(ASM_STYLE)
-
 
 # Unit tests 
 TEST_OBJECTS  := $(TEST_SOURCES:$(TEST_DIR)/%.cpp=$(OBJ_DIR)/%.o)
@@ -55,14 +47,27 @@ $(TESTS): $(TEST_OBJECTS) $(OBJECTS)
 	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o\
 		-o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
 
+# ==== PROGRAM TARGETS ==== #
+PROGRAMS=frayma 
+PROGRAM_OBJECTS := $(PROGRAM_SOURCES:$(PROGRAM_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+
+$(PROGRAM_OBJECTS) : $(OBJ_DIR)/%.o : $(PROGRAM_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCS) -c $< -o $@
+
+$(PROGRAMS): $(OBJECTS) $(PROGRAM_OBJECTS) 
+	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o\
+		-o $(BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
+
 .PHONY: clean
 
 # Main targets 
-all : test 
+all : test programs
 
 obj : $(OBJECTS)		# TODO : just for debugging
 
 test : $(TESTS)
+
+programs: $(PROGRAMS)
 
 clean:
 	rm -rfv *.o $(OBJ_DIR)/*.o 

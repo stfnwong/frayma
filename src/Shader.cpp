@@ -7,36 +7,9 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include "Shader.hpp"
 
-// TODO: re-do the shader compilation stages. I might follow the 
-// design from the Joey DeVries book here.
-
-// Util functions
-/*
- * check_shader_error()
- */
-void check_shader_error(GLuint shader, GLuint flag, bool is_program, const std::string& err_msg)
-{
-    GLint success = 0;
-    GLchar error[1024];
-
-    if(is_program)
-        glGetProgramiv(shader, flag, &success);
-    else
-        glGetShaderiv(shader, flag, &success);
-
-    if(success == GL_FALSE)
-    {
-        if(is_program)
-            glGetProgramInfoLog(shader, sizeof(error), NULL, error);
-        else
-            glGetShaderInfoLog(shader, sizeof(error), NULL, error);
-
-        std::cerr << "[" << __func__ << "] " << err_msg << " '"
-            << error << "'" << std::endl;
-    }
-}
 
 /*
  * load_shader()
@@ -65,63 +38,10 @@ std::string load_shader(const std::string& filename)
 }
 
 
-
 // ======== SHADER OBJECT ======= //
-Shader::Shader(const std::string& vert_shader_filename, const std::string& frag_shader_filename)
+Shader::Shader()
 {
-    GLint success;
-    GLchar info_log[512];
-
-
-    //this->gl_shader[0] = create_shader(load_shader(vert_shader_filename), GL_VERTEX_SHADER);
-    //this->gl_shader[1] = create_shader(load_shader(frag_shader_filename), GL_FRAGMENT_SHADER);
-
-    std::string vshader_source = load_shader(vert_shader_filename);
-    std::string fshader_source = load_shader(frag_shader_filename);
-
-    // For now, lets just put all the shader code here and worry about cleaning up later
-    const GLchar* vs_code = vshader_source.c_str(); 
-    const GLchar* fs_code = fshader_source.c_str(); 
-
-    // vertex shader 
-    this->gl_shader[0] = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(this->gl_shader[0], 1, &vs_code, NULL);
-    glCompileShader(this->gl_shader[0]);
-    glGetShaderiv(this->gl_shader[0], GL_COMPILE_STATUS, &success);
-    if(!success)
-    {
-        glGetShaderInfoLog(this->gl_shader[0], 512, NULL, info_log);
-        std::cout << "[" << __func__ << "] shader compilation log '" 
-            << info_log << "' " << std::endl;
-    }
-
-    // fragment shader
-    this->gl_shader[1] = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(this->gl_shader[1], 1, &fs_code, NULL);
-    glCompileShader(this->gl_shader[1]);
-    glGetShaderiv(this->gl_shader[1], GL_COMPILE_STATUS, &success);
-    if(!success)
-    {
-        glGetShaderInfoLog(this->gl_shader[1], 512, NULL, info_log);
-        std::cout << "[" << __func__ << "] shader compilation log '" 
-            << info_log << "' " << std::endl;
-    }
-
-    // Create the program
-    this->gl_program = glCreateProgram();
-
-    for(int i = 0; i < MAX_NUM_SHADERS; ++i)
-        glAttachShader(this->gl_program, this->gl_shader[i]);
-
-    // For now we just fix the attributes here. Not sure it its worth trying to make this more dynamic?
-    glBindAttribLocation(this->gl_program, 0, "position");
-    glBindAttribLocation(this->gl_program, 1, "tex_coord");
-
-    glLinkProgram(this->gl_program);
-    check_shader_error(this->gl_program, GL_LINK_STATUS, true, "ERROR: Failed to link program");
-
-    glValidateProgram(this->gl_program);
-    check_shader_error(this->gl_program, GL_VALIDATE_STATUS, true, "ERROR: Failed to validate program");
+    this->shader_ok = false;
 }
 
 /*
@@ -131,10 +51,73 @@ Shader::~Shader()
 {
     for(int i = 0; i < MAX_NUM_SHADERS; ++i)
     {
-        glDetachShader(this->gl_program, this->gl_shader[i]);
-        glDeleteShader(this->gl_shader[i]);
+        glDetachShader(this->program, this->shaders[i]);
+        glDeleteShader(this->shaders[i]);
     }
-    glDeleteProgram(this->gl_program);
+    glDeleteProgram(this->program);
+}
+
+/*
+ * compile_shader()
+ */
+GLuint Shader::compile_shader(const std::string& src, GLenum type)
+{
+    GLuint shader;
+    const GLchar* shader_src = src.c_str(); 
+
+    shader = glCreateShader(type);
+    if(shader == 0)
+    {
+        std::cout << "[" << __func__ << "] failed to create shader" << std::endl;
+        return shader;
+    }
+    glShaderSource(shader, 1, &shader_src, NULL);
+    glCompileShader(shader);
+    
+    return shader;
+}
+
+/*
+ * get_error()
+ */
+GLint Shader::get_error(GLuint shader, GLuint flag, bool is_program)
+{
+    GLint status = 0;
+    if(is_program)
+        glGetProgramiv(shader, flag, &status);
+    else
+        glGetShaderiv(shader, flag, &status);
+
+    return status;
+}
+
+/*
+ * get_error_log()
+ */
+std::string Shader::get_error_log(GLuint shader, GLuint flag, bool is_program)
+{
+    GLint status = 0;
+    GLchar info_log[512];
+    std::ostringstream oss;
+
+    status = this->get_error(shader, flag, is_program);
+    if(status == GL_FALSE)
+    {
+        if(is_program)
+        {
+            glGetProgramInfoLog(shader, sizeof(info_log), NULL, info_log);
+            oss << "ERROR : Program failed to link with error '"
+                << info_log << "'";
+        }
+        else
+        {
+            glGetShaderInfoLog(shader, sizeof(info_log), NULL, info_log);
+            oss << "ERROR : Shader failed to compile with error '"
+                << info_log << "'";
+        }
+    }
+    
+    return oss.str();
 }
 
 /*
@@ -142,5 +125,73 @@ Shader::~Shader()
  */
 void Shader::use(void)
 {
-    glUseProgram(this->gl_program);
+    glUseProgram(this->program);
+}
+
+/*
+ * ok()
+ */
+bool Shader::ok(void) const
+{
+    return this->shader_ok;
+}
+
+/*
+ * compile()
+ */
+int Shader::compile(const std::string& frag_src, const std::string& vert_src, const std::string& attrib)
+{
+    std::string fshader_source = load_shader(frag_src);
+    std::string vshader_source = load_shader(vert_src);
+
+    // Create the program
+    this->program = glCreateProgram();
+
+    // frag shader 
+    this->shaders[0] = this->compile_shader(fshader_source, GL_FRAGMENT_SHADER);
+
+    // vert shader
+    this->shaders[1] = this->compile_shader(vshader_source, GL_VERTEX_SHADER);
+
+    for(int i = 0; i < MAX_NUM_SHADERS; ++i)
+    {
+        if(!this->shaders[i])
+        {
+            std::cerr << "[" << __func__ << "] shader compilation failed" << std::endl;
+            return -1;
+        }
+        glAttachShader(this->program, this->shaders[i]);
+    }
+
+    glBindAttribLocation(this->program, 0, attrib.c_str());
+    glLinkProgram(this->program);
+    if(this->get_error(this->program, GL_LINK_STATUS, true))
+    {
+        std::cout << "[" << __func__ << "] " << this->get_error_log(
+                this->program,
+                GL_LINK_STATUS,
+                true) << std::endl;
+    }
+
+    glValidateProgram(this->program);
+    if(this->get_error(this->program, GL_VALIDATE_STATUS, true))
+    {
+        std::cout << "[" << __func__ << "] " << this->get_error_log(
+                this->program,
+                GL_VALIDATE_STATUS,
+                true) << std::endl;
+    }
+
+    this->shader_ok = true;
+
+    return 0;
+}
+
+/*
+ * getProgram()
+ */
+// TODO : do I want to return a reference here?
+GLuint Shader::getProgram(void) const
+{
+    return this->program;
 }

@@ -20,14 +20,25 @@
 class Shader
 {
     private:
-        GLuint gl_program;
-        GLuint gl_shader[MAX_NUM_SHADERS];  // make a vector?
+        GLuint program;
+        GLuint shaders[MAX_NUM_SHADERS];  // make a vector?
+        bool   shader_ok;
+
+    private:
+        // Compile a single shader
+        GLuint      compile_shader(const std::string& src, GLenum type);
+        GLint       get_error(GLuint shader, GLuint flag, bool is_program);
+        std::string get_error_log(GLuint shader, GLuint flag, bool is_program);
 
     public:
-        Shader(const std::string& vert_shader_filename, const std::string& frag_shader_filename);
+        Shader();
         virtual ~Shader();
-        //void loadShader(const std::string& filename);
-        void use(void);
+        void   use(void);
+        bool   ok(void) const;
+
+        // Compile the shaders in this Shader object
+        int    compile(const std::string& vert_src, const std::string& frag_src, const std::string& attrib);
+        GLuint getProgram(void) const;
 
     public:
         // Don't allow assignment or copy construction
