@@ -32,10 +32,9 @@ int main(int argc, char* argv[])
         DEFAULT_PITCH
     );
 
-
     // Get a shader and build the shader object
     Shader shader;
-    status = (int) shader.compile(
+    status = shader.compile(
             frag_shader,
             vert_shader,
             shader_attrib_name
