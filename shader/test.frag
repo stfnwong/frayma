@@ -6,5 +6,7 @@ uniform sampler2D diffuse;
 
 void main()
 {
+    vec2 xy = gl_FragCoord.xy;      // current pixel coord
+    //xy.x = xy.x / 
     gl_FragColor = texture2D(diffuse, tex_coord0);
 }
