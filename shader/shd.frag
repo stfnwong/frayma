@@ -72,7 +72,16 @@ vec3 norm(vec3 p)
 }
 
 
+// camera methods
+void cam(inout vec3 p)
+{
+  float t_param = fGlobalTime * 0.3;
+  p.yz *= rot(t_param);
+  p.zx *= rot(t_param * 1.2);
+}
 
+
+float mat = 0;
 void main(void)
 {
   vec2 uv = vec2(gl_FragCoord.x / v2Resolution.x, gl_FragCoord.y / v2Resolution.y);
@@ -82,12 +91,41 @@ void main(void)
   vec3 s = vec3(0.0, 0.0, -10.0);
   vec3 r = normalize(vec3(-uv, 0.7));
   
+  // rotate camera 
+  cam(s);
+  cam(r);
+
+  vec3 col = vec3(0);
+  vec3 lpos = vec3(0);
+  
+  
   vec3 p = s;
   int i;
+  float prod = 1.0;
   for(i = 0; i < 100; ++i)
   {
     float d = map(p);
-    if(d < 0.001 || d > 100.0)
+    if(d < 0.001)
+    {
+      // colorize
+      float curmat = mat;
+      
+      vec3 n = norm(p);
+      vec3 l = normalize(lpos - p);
+      float fog = 1.0 - i / 100.0;
+      float fresnel = pow(1.0 - abs(dot(n, r)), 2.0);
+      vec3 h = normalize(l - r);
+      
+      float back = (curmat == 2.0) ? 0.0 : 1.0;
+      float gold  = (curmat == 1.0) ? 1.0 : 0.0;
+      vec3 diff = mix(vec3(0.0, 0.1, 8.0), vec3(1.0, 0.2, 0.2), gold);
+      
+      // apply transforms to pixel color
+      col += back * prod * max(0.0, dot(n, l)) * fog * (0.2 + pow(max(0, dot(n, h)), 5.0) * 0.8) * diff;
+      col += back * prod * (-n.y * 0.5 + 0.5) * vec3(0.5, 0.2, 0.1) * 0.3 * diff;
+      prod *= 0.8 + fresnel * 0.8;
+    }
+    if(d > 100.0)
     {
       i = 100;
       break;
@@ -95,15 +133,14 @@ void main(void)
     p += r * d;
   }
   
-  vec3 col =  vec3(0);
+
   vec3 n = norm(p);
   vec3 l = normalize(vec3(-1));
   float fog = 1.0 - i / 100.0;
   
   //col += max(dot(n, vec3(1.0)), 1.0);
-  col += max(0.0, dot(n, l)) ;
+  col += max(0.0, dot(n, l)) * fog;
   
-  // TODO : better coloring....
   
   out_color = vec4(col, 1);
 }
